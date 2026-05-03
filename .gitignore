@@ -1,0 +1,9 @@
+work/
+logs/
+*.log
+.env
+__pycache__/
+*.pyc
+*.pyo
+backups/
+data/
