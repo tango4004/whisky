@@ -24,8 +24,8 @@ Example: `WSC_1_7_20260427_a3f9c1.xlsx`
 import openpyxl, shutil, os
 
 def drop_task(commands, io_dir, task_name):
-    fname = \WSC_1_7_\ + task_name + \.xlsx
-    tmp_path = os.path.join(io_dir, \.\ + fname)
+    fname = "WSC_1_7_" + task_name + ".xlsx"
+    tmp_path = os.path.join(io_dir, "." + fname)
     final_path = os.path.join(io_dir, fname)
     wb = openpyxl.Workbook()
     ws = wb.active
