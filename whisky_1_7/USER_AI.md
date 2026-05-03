@@ -20,7 +20,7 @@ Example: `WSC_1_7_20260502_A3`
 ## Workflow
 
 1. Create a Google Sheet using the naming convention above.
-2. Write commands as a simple list/array into Column A.
+2. Write commands as a simple string into Column A.
 3. Avoid complex nested quotes (e.g., `echo "text"`) if the parser is sensitive; prefer simple strings for testing.
 4. Poll the directory `WHISKY_OUT/<task_name>/RES_tasks.csv` for the output.
 
