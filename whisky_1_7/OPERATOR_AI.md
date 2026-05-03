@@ -19,7 +19,7 @@ Each row in column A must contain one shell command (no header row).
 ## Reading results
 After the watcher processes the file, results appear in:
 
-    IO_DIR/WHISKY_OUT/[TASK_NAME]/RES_tasks.csv
+    IO_DIR/WHISKY_OUT/[TASK_NAME]/[TASK_NAME].csv
 
 Columns: `cmd`, `result`
 

@@ -6,7 +6,7 @@ A lightweight task-runner that watches a Google Drive-mounted directory for Goog
 
 1. Drop a Google Sheets or `.xlsx` file prefixed `WSC_1_7_` into the watched input directory (root of Google Drive).
 2. The watcher picks it up, reads one shell command per row, and runs them in order
-3. Results land in `/WHISKY_OUT/<task_name>/RES_tasks.csv` on Google Drive.
+3. Results land in `/WHISKY_OUT/<task_name>/<filename_without_ext>.csv` on Google Drive.
 4. The input file is removed on success.
 
 ## Project layout

@@ -1,5 +1,5 @@
 # whisky_1_7.py
-# Whisky Project v1.7
+# Whisky Project v1.7.2
 #
 # Author:  tango4004
 # License: MIT
@@ -116,11 +116,11 @@ def process_task(file_name):
 
         # 6. FINALIZATION (UTF-8-SIG for correct Excel opening)
         res_df = pd.DataFrame(results, columns=["Command", "Output"])
-        local_res_csv = os.path.join(local_dir, "RES_tasks.csv")
+        local_res_csv = os.path.join(local_dir, f"{task_name}.csv")
         res_df.to_csv(local_res_csv, index=False, encoding='utf-8-sig')
 
         # 7. EXPORT RESULTS
-        shutil.copy2(local_res_csv, os.path.join(cloud_dir, "RES_tasks.csv"))
+        shutil.copy2(local_res_csv, os.path.join(cloud_dir, f"{task_name}.csv"))
         if os.path.exists(res_dir) and os.listdir(res_dir):
             shutil.copytree(res_dir, os.path.join(cloud_dir, "result"), dirs_exist_ok=True)
 
@@ -142,7 +142,7 @@ if __name__ == "__main__":
             logging.error(f"Path not found: {p}. Create it before running.")
             exit(1)
 
-    logging.info(f"Whisky v.1.7.1 started. Watcher active on: {IO_DIR}")
+    logging.info(f"Whisky v.1.7.2 started. Watcher active on: {IO_DIR}")
 
     while True:
         try:

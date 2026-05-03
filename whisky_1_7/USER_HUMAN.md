@@ -8,7 +8,7 @@ A simple task runner: you create a Google Sheet, Whisky executes the commands in
 2. Create a new Google Sheet right there (do not place it in subfolders unless instructed).
 3. Enter your shell commands in Column A (one command per row, starting from A1). No headers.
 4. Name the file with the prefix WSC_1_7_, for example: WSC_1_7_my_task
-5. Wait a few seconds — results appear in the folder: WHISKY_OUT/WSC_1_7_my_task/RES_tasks.csv
+5. Wait a few seconds — results appear in the folder: WHISKY_OUT/WSC_1_7_my_task/WSC_1_7_my_task.csv
 
 ## Example Sheet contents (Column A)
 - A1: date
