@@ -1,37 +1,31 @@
 # User Guide (AI / Bot)
 
 ## Task file naming convention
-Use ISO 8601 date and a UUID to avoid collisions:
 
-    WSC_1_7_[ISO_8601_DATE]_[UUID].xlsx
+Use the mandatory prefix followed by a unique identifier:
 
-Example: `WSC_1_7_20260427_a3f9c1.xlsx`
+```
+WSC_1_7_[ISO_8601_DATE]_[UUID]
+```
+
+Example: `WSC_1_7_20260502_A3`
 
 ## File format
-- Single sheet, no header row
-- Column A: one shell command per row
-- Encoding: UTF-8 (pandas default)
+
+- **Type:** Google Sheets (Native)
+- **Structure:** Single sheet, no header row.
+- **Column A:** One shell command per cell (A1, A2, etc.).
+- **Important:** Use PLAIN TEXT only. Do not use HTML tags or rich formatting inside cells.
 
 ## Workflow
-1. Generate the xlsx with `openpyxl` or `pandas`
-2. Write it atomically (write to tmp, then rename) to avoid partial reads
-3. Poll `OUT_DIR/WHISKY_OUT/<task_name>/RES_tasks.csv` until it appears
-4. Parse CSV: columns `cmd` and `result`
 
-## Python snippet
+1. Create a Google Sheet using the naming convention above.
+2. Write commands as a simple list/array into Column A.
+3. Avoid complex nested quotes (e.g., `echo "text"`) if the parser is sensitive; prefer simple strings for testing.
+4. Poll the directory `WHISKY_OUT/<task_name>/RES_tasks.csv` for the output.
 
-```python
-import openpyxl, shutil, os
+## Operational Tips
 
-def drop_task(commands, io_dir, task_name):
-    fname = "WSC_1_7_" + task_name + ".xlsx"
-    tmp_path = os.path.join(io_dir, "." + fname)
-    final_path = os.path.join(io_dir, fname)
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    for cmd in commands:
-        ws.append([cmd])
-    wb.save(tmp_path)
-    shutil.move(tmp_path, final_path)
-    return final_path
-```
+- Do not use temporary files (.xlsx). Create the Google Sheet directly.
+- The system recognizes the task as soon as the file with the `WSC_1_7_` prefix is created in a reachable folder.
+- Output CSV structure: `cmd,result`
