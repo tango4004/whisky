@@ -1,28 +1,34 @@
 # Operator Guide (AI / Bot)
 
-## Role
-You manage the Whisky task queue programmatically.
+## Server prefix assignments
+
+ARM1: WS1_1_7_  |  ARM2: WSC_1_7_  |  AMD1: WS2_1_7_  |  AMD2: WS3_1_7_
+
+Use the prefix that matches the target server.
 
 ## Dropping a task
-Place a `.xlsx` file in `IO_DIR` with the naming convention:
 
-    WSC_1_7_[TASK_NAME].xlsx
+Place an .xlsx file in IO_DIR (Drive root):
 
-Each row in column A must contain one shell command (no header row).
+    <PREFIX><TASK_NAME>.xlsx
+    Example: WSC_1_7_20260504_A1.xlsx
 
-## Validation checklist before dropping
-- [ ] Filename starts with `WSC_1_7_`
-- [ ] Extension is `.xlsx` (not .xls, .csv, etc.)
-- [ ] Column A contains commands, one per row
-- [ ] No empty leading rows
+Column A: one shell command per row, no header.
+
+## Validation checklist
+
+- Filename starts with the correct prefix for the target server
+- Extension is .xlsx
+- Column A: commands only, no header, no empty leading rows
 
 ## Reading results
-After the watcher processes the file, results appear in:
 
-    IO_DIR/WHISKY_OUT/[TASK_NAME]/[TASK_NAME].csv
+    WHISKY_OUT/<task_name>/<task_name>.csv
+    Columns: Command, Output
 
-Columns: `cmd`, `result`
+Re-submitting the same task name overwrites the previous output - no _OLD_ folders.
 
-## Error handling
-- `TIMEOUT` - command exceeded 600 s
-- `ERROR: <msg>` - unexpected exception
+## Error tokens in Output column
+
+!!! TIMEOUT ERROR (600s) !!!   - command exceeded timeout
+!!! SYSTEM ERROR: <msg> !!!    - unexpected exception

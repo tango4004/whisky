@@ -1,31 +1,33 @@
 # User Guide (AI / Bot)
 
-## Task file naming convention
+## Prefix per server
 
-Use the mandatory prefix followed by a unique identifier:
+ARM1: WS1_1_7_  |  ARM2: WSC_1_7_  |  AMD1: WS2_1_7_  |  AMD2: WS3_1_7_
 
-```
-WSC_1_7_[ISO_8601_DATE]_[UUID]
-```
+## Task file naming
 
-Example: `WSC_1_7_20260502_A3`
+    <PREFIX><ISO_DATE>_<ID>.xlsx
+    Example (ARM2): WSC_1_7_20260504_A1.xlsx
 
 ## File format
 
-- **Type:** Google Sheets (Native)
-- **Structure:** Single sheet, no header row.
-- **Column A:** One shell command per cell (A1, A2, etc.).
-- **Important:** Use PLAIN TEXT only. Do not use HTML tags or rich formatting inside cells.
+- Type: .xlsx
+- Structure: single sheet, no header
+- Column A: one shell command per cell (A1, A2, ...)
+- Plain text only
 
 ## Workflow
 
-1. Create a Google Sheet using the naming convention above.
-2. Write commands as a simple string into Column A.
-3. Avoid complex nested quotes (e.g., `echo "text"`) if the parser is sensitive; prefer simple strings for testing.
-4. Poll the directory `WHISKY_OUT/<task_name>/<input_filename>.csv` for the output.
+1. Create .xlsx with commands in column A.
+2. Place in root of watched Google Drive (not in a subfolder).
+3. Poll WHISKY_OUT/<task_name>/<task_name>.csv for results.
 
-## Operational Tips
+## Output CSV
 
-- Do not use temporary files (.xlsx). Create the Google Sheet directly.
-- The system recognizes the task as soon as the file with the `WSC_1_7_` prefix is created in a reachable folder.
-- Output CSV structure: `cmd,result`
+Column Command: the shell command that was run
+Column Output:  combined stdout + stderr
+
+## Notes
+
+- Input file is deleted after successful processing.
+- Re-submitting the same task name overwrites previous output (no archive copies).

@@ -1,21 +1,28 @@
 # User Guide (Human)
 
 ## What is Whisky?
-A simple task runner: you create a Google Sheet, Whisky executes the commands inside and gives you the results.
+Drop a Google Sheet with shell commands into your Drive root. Whisky runs them and returns a CSV.
 
 ## How to run a task
-1. Go to the **root (main) folder** of your Google Drive.
-2. Create a new Google Sheet right there (do not place it in subfolders unless instructed).
-3. Enter your shell commands in Column A (one command per row, starting from A1). No headers.
-4. Name the file with the prefix WSC_1_7_, for example: WSC_1_7_my_task
-5. Wait a few seconds — results appear in the folder: WHISKY_OUT/WSC_1_7_my_task/WSC_1_7_my_task.csv
 
-## Example Sheet contents (Column A)
-- A1: date
-- A2: uptime
-- A3: ls -la
+1. Go to the ROOT of your Google Drive (not in any subfolder).
+2. Create a new Google Sheet there.
+3. Enter shell commands in Column A, one per row, starting at A1. No header.
+4. Name the file with the prefix for the target server:
+     WS1_1_7_ -> ARM1
+     WSC_1_7_ -> ARM2
+     WS2_1_7_ -> AMD1
+     WS3_1_7_ -> AMD2
+   Example: WSC_1_7_mytest
+5. Results appear in: WHISKY_OUT/WSC_1_7_mytest/WSC_1_7_mytest.csv
+
+## Example (Column A)
+date
+uptime
+ls -la ~
 
 ## Notes
-- Use plain text only.
-- Important: The file must be created in the **Root of Google Drive**.
-- The input Google Sheet is deleted after successful processing.
+- Plain text only.
+- File must be in Drive root.
+- Input sheet is deleted after successful processing.
+- Re-running the same task name overwrites previous output (no leftover archive folders).
