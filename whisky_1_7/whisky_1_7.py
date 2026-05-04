@@ -1,5 +1,5 @@
 # whisky_1_7.py
-# Whisky Project v1.7.4
+# Whisky Project v1.7.5
 #
 # Author:  tango4004
 # License: MIT
@@ -64,6 +64,16 @@ logging.basicConfig(
 def get_ts():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
+def _parse_csv(path):
+    """Extract commands from .csv — first column, no header assumed."""
+    import csv
+    cmds = []
+    with open(path, newline="", encoding="utf-8-sig") as f:
+        for row in csv.reader(f):
+            if row and row[0].strip():
+                cmds.append(row[0].strip())
+    return cmds
+
 def process_task(file_name):
     ts = get_ts()
     task_name = file_name.replace(".xlsx", "")
@@ -87,15 +97,35 @@ def process_task(file_name):
         os.makedirs(res_dir, exist_ok=True)
         os.makedirs(cloud_dir, exist_ok=True)
 
-        # 3. MATERIALIZATION (copy input to local workspace and cloud mirror)
+        # 3. MATERIALIZATION
         local_xlsx = os.path.join(local_dir, file_name)
-        shutil.copy2(src_path, local_xlsx)                              # local copy
-        shutil.copy2(local_xlsx, os.path.join(cloud_dir, file_name))   # cloud mirror
+        try:
+            shutil.copy2(src_path, local_xlsx)                         # local copy (triggers rclone VFS download)
+        except OSError as e:
+            logging.error(f"Cannot read {file_name} from Drive ({e}). Removing to stop retry loop.")
+            try:
+                os.remove(src_path)
+            except Exception:
+                pass
+            return
+        ext_check = file_name.rsplit(".", 1)[-1].lower()
+        if ext_check != "csv":                                          # skip mirror for csv — name conflicts with result
+            shutil.copy2(local_xlsx, os.path.join(cloud_dir, file_name))
 
         # 4. COMMAND PARSING
-        df = pd.read_excel(local_xlsx, header=None)
-        tasks = df[0].dropna().astype(str).tolist()
+        ext = file_name.rsplit(".", 1)[-1].lower()
+        if ext == "csv":
+            tasks = _parse_csv(local_xlsx)
+        else:
+            df = pd.read_excel(local_xlsx, header=None)
+            tasks = df[0].dropna().astype(str).tolist() if not df.empty and 0 in df.columns else []
         results = []
+
+        if not tasks:
+            logging.warning(f"Task {task_name}: no commands found, skipping.")
+            if os.path.exists(src_path):
+                os.remove(src_path)
+            return
 
         # 5. EXECUTION LOOP
         for cmd in tasks:
@@ -150,12 +180,12 @@ if __name__ == "__main__":
             logging.error(f"Path not found: {p}. Create it before running.")
             exit(1)
 
-    logging.info(f"Whisky v.1.7.4 started. Watcher active on: {IO_DIR}")
+    logging.info(f"Whisky v.1.7.5 started. Watcher active on: {IO_DIR}")
 
     while True:
         try:
             # Pick up only files matching our version prefix
-            files = [f for f in os.listdir(IO_DIR) if f.startswith(PREFIX) and f.endswith(".xlsx")]
+            files = [f for f in os.listdir(IO_DIR) if f.startswith(PREFIX) and f.endswith((".xlsx", ".csv"))]
             for f in files:
                 process_task(f)
         except Exception as e:
