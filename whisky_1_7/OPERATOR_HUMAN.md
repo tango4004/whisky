@@ -13,11 +13,14 @@ WHISKY_PREFIX=WSC_1_7_        # unique per server - NEVER share across instances
 WHISKY_IO_DIR=/home/whisky/whisky_drive
 WHISKY_CMD_TIMEOUT=600
 
-Two instances with the same prefix will both process the same task, causing duplicate output.
-
 ## Server prefix assignments
 
-ARM1: WS1_1_7_  |  ARM2: WSC_1_7_  |  AMD1: WS2_1_7_  |  AMD2: WS3_1_7_
+| Server   | Prefix      |
+|----------|-------------|
+| server_c | WSC_1_7_    |
+| server_1 | WS1_1_7_    |
+| server_2 | WS2_1_7_    |
+| server_3 | WS3_1_7_    |
 
 ## Monitoring
 

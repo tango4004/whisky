@@ -2,7 +2,12 @@
 
 ## Server prefix assignments
 
-ARM1: WS1_1_7_  |  ARM2: WSC_1_7_  |  AMD1: WS2_1_7_  |  AMD2: WS3_1_7_
+| Server   | Prefix      |
+|----------|-------------|
+| server_c | WSC_1_7_    |
+| server_1 | WS1_1_7_    |
+| server_2 | WS2_1_7_    |
+| server_3 | WS3_1_7_    |
 
 Use the prefix that matches the target server.
 
@@ -26,7 +31,7 @@ Column A: one shell command per row, no header.
     WHISKY_OUT/<task_name>/<task_name>.csv
     Columns: Command, Output
 
-Re-submitting the same task name overwrites the previous output - no _OLD_ folders.
+Re-submitting the same task name overwrites previous output (no _OLD_ folders).
 
 ## Error tokens in Output column
 

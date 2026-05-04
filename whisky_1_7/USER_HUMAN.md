@@ -9,11 +9,16 @@ Drop a Google Sheet with shell commands into your Drive root. Whisky runs them a
 2. Create a new Google Sheet there.
 3. Enter shell commands in Column A, one per row, starting at A1. No header.
 4. Name the file with the prefix for the target server:
-     WS1_1_7_ -> ARM1
-     WSC_1_7_ -> ARM2
-     WS2_1_7_ -> AMD1
-     WS3_1_7_ -> AMD2
+
+   | Server   | Prefix      |
+   |----------|-------------|
+   | server_c | WSC_1_7_    |
+   | server_1 | WS1_1_7_    |
+   | server_2 | WS2_1_7_    |
+   | server_3 | WS3_1_7_    |
+
    Example: WSC_1_7_mytest
+
 5. Results appear in: WHISKY_OUT/WSC_1_7_mytest/WSC_1_7_mytest.csv
 
 ## Example (Column A)
@@ -25,4 +30,4 @@ ls -la ~
 - Plain text only.
 - File must be in Drive root.
 - Input sheet is deleted after successful processing.
-- Re-running the same task name overwrites previous output (no leftover archive folders).
+- Re-running the same task name overwrites previous output.

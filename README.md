@@ -19,8 +19,17 @@ executes shell commands listed inside each file, and writes results back as CSV 
 
 WHISKY_PREFIX      - prefix this instance watches (unique per server)
 WHISKY_IO_DIR      - path to Drive mount (default: /home/whisky/whisky_drive)
-WHISKY_CMD_TIMEOUT - per-command timeout seconds (default: 600)
+WHISKY_CMD_TIMEOUT - per-command timeout in seconds (default: 600)
 
-## Multi-server prefixes
+## Deployment
 
-ARM1: WS1_1_7_  |  ARM2: WSC_1_7_  |  AMD1: WS2_1_7_  |  AMD2: WS3_1_7_
+Each server runs one watcher instance with a unique prefix:
+
+| Server   | Prefix      |
+|----------|-------------|
+| server_c | WSC_1_7_    |
+| server_1 | WS1_1_7_    |
+| server_2 | WS2_1_7_    |
+| server_3 | WS3_1_7_    |
+
+Two instances sharing the same prefix will both process the same task and produce duplicate output.

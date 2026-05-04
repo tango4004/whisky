@@ -1,13 +1,18 @@
 # User Guide (AI / Bot)
 
-## Prefix per server
+## Server prefix assignments
 
-ARM1: WS1_1_7_  |  ARM2: WSC_1_7_  |  AMD1: WS2_1_7_  |  AMD2: WS3_1_7_
+| Server   | Prefix      |
+|----------|-------------|
+| server_c | WSC_1_7_    |
+| server_1 | WS1_1_7_    |
+| server_2 | WS2_1_7_    |
+| server_3 | WS3_1_7_    |
 
 ## Task file naming
 
     <PREFIX><ISO_DATE>_<ID>.xlsx
-    Example (ARM2): WSC_1_7_20260504_A1.xlsx
+    Example (server_c): WSC_1_7_20260504_A1.xlsx
 
 ## File format
 
