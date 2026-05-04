@@ -1,5 +1,5 @@
 # whisky_1_7.py
-# Whisky Project v1.7.2
+# Whisky Project v1.7.3
 #
 # Author:  tango4004
 # License: MIT
@@ -30,17 +30,27 @@ import subprocess
 import pandas as pd
 from datetime import datetime
 
+# --- LOAD .env (optional, overrides defaults) ---
+_env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+if os.path.exists(_env_file):
+    with open(_env_file) as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line and not _line.startswith("#") and "=" in _line:
+                _k, _v = _line.split("=", 1)
+                os.environ.setdefault(_k.strip(), _v.strip())
+
 # --- DYNAMIC PATH SETUP ---
 # Script resolves its own location and builds the directory tree from the project root
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(SCRIPT_DIR)
 
-IO_DIR = "/home/whisky/whisky_drive"
+IO_DIR = os.environ.get("WHISKY_IO_DIR", "/home/whisky/whisky_drive")
 OUT_DIR = os.path.join(IO_DIR, "WHISKY_OUT")
 WORK_BASE = os.path.join(BASE_DIR, "work")
 
-PREFIX = "WSC_1_7_"
-CMD_TIMEOUT = 600
+PREFIX = os.environ.get("WHISKY_PREFIX", "WSC_1_7_")
+CMD_TIMEOUT = int(os.environ.get("WHISKY_CMD_TIMEOUT", "600"))
 
 # --- LOGGING ---
 logging.basicConfig(
