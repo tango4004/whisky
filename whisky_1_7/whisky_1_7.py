@@ -1,5 +1,5 @@
 # whisky_1_7.py
-# Whisky Project v1.7.3
+# Whisky Project v1.7.4
 #
 # Author:  tango4004
 # License: MIT
@@ -75,12 +75,11 @@ def process_task(file_name):
     logging.info(f"--- Captured Task: {task_name} ---")
 
     try:
-        # 1. ROTATION (data safety — archive old runs)
+        # 1. CLEANUP (drop old run — no OLD folders, prevents Drive flood)
         for d in [local_dir, cloud_dir]:
             if os.path.exists(d):
-                new_name = f"{d}_OLD_{ts}"
-                os.rename(d, new_name)
-                logging.info(f"Archived old directory to {os.path.basename(new_name)}")
+                shutil.rmtree(d)
+                logging.info(f"Removed old directory: {os.path.basename(d)}")
 
         # 2. STRUCTURE INIT
         tmp_dir = os.path.join(local_dir, "tmp")
@@ -152,7 +151,7 @@ if __name__ == "__main__":
             logging.error(f"Path not found: {p}. Create it before running.")
             exit(1)
 
-    logging.info(f"Whisky v.1.7.2 started. Watcher active on: {IO_DIR}")
+    logging.info(f"Whisky v.1.7.4 started. Watcher active on: {IO_DIR}")
 
     while True:
         try:
