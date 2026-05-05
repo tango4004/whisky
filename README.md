@@ -1,35 +1,59 @@
 # Whisky Project
 
-A lightweight task-runner that watches a Google Drive-mounted directory for .xlsx files,
-executes shell commands listed inside each file, and writes results back as CSV files.
+A lightweight Drive-connected task runner for servers with AI agents.
+Drop a file on Google Drive — get shell command results back as CSV.
+
+## Versions
+
+**v1.7** — for servers without an AI agent. Reads commands directly from .xlsx cells.
+Optionally uses Gemini CLI ( prefix) for command extraction from any file format.
+
+**v1.8** — for servers with an Anthropic API key. Routes all input files through
+Claude (Haiku) for command extraction, then executes results. Supports .xlsx, .csv, .docx, .txt.
 
 ## How it works
 
-1. Drop an .xlsx file with the configured prefix (e.g. WSC_1_7_) into the Drive root.
-2. The watcher picks it up, reads one shell command per row, and runs them in order.
-3. Results land in WHISKY_OUT/<task_name>/<task_name>.csv on Google Drive.
-4. The input file is removed on success.
-5. Previous output for the same task name is overwritten (no _OLD_ archive copies).
+1. Drop a file with the configured prefix into the Drive root (e.g. ).
+2. The watcher picks it up, sends the file contents to Claude for command extraction.
+3. Extracted shell commands run in order on the server.
+4. Results land in  on Drive.
+5. The input file is removed on success.
 
-## Quick start
+## Quick start (v1.8)
 
-    cd whisky_1_7 && cp .env.example .env && python3 whisky_1_7.py
+    cd whisky_1_8
+    cp .env.example .env
+    # fill in ANTHROPIC_API_KEY and WHISKY_PREFIX
+    python3 whisky_1_8.py
 
-## Configuration (.env)
+## Quick start (v1.7)
 
-WHISKY_PREFIX      - prefix this instance watches (unique per server)
-WHISKY_IO_DIR      - path to Drive mount (default: /home/whisky/whisky_drive)
-WHISKY_CMD_TIMEOUT - per-command timeout in seconds (default: 600)
+    cd whisky_1_7
+    cp .env.example .env
+    python3 whisky_1_7.py
 
-## Deployment
+## Input format tips
 
-Each server runs one watcher instance with a unique prefix:
+**Google Sheets (.xlsx):** wrap paths and arguments in  to avoid
+CSV quoting issues. Example: 
 
-| Server   | Prefix      |
-|----------|-------------|
-| server_c | WSC_1_7_    |
-| server_1 | WS1_1_7_    |
-| server_2 | WS2_1_7_    |
-| server_3 | WS3_1_7_    |
+**Google Docs (.docx):** preferred for multi-line scripts and file creation.
+Use single-quoted  for code literals — avoids escape conflicts across
+the Docs → connector → shell pipeline. Verify each write with {"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":115,"reason":"McpError: MCP error -32001: Request timed out"}} before compiling.
 
-Two instances sharing the same prefix will both process the same task and produce duplicate output.
+## Configuration
+
+See  in each version directory.
+
+Key variables for v1.8:
+
+| Variable | Description |
+|---|---|
+|  | Drive prefix this instance watches (unique per server) |
+|  | Path to rclone Drive mount |
+|  | Anthropic API key for Claude parser |
+|  | Model for extraction (default: claude-haiku-4-5-20251001) |
+
+## License
+
+MIT
