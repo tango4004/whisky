@@ -1,5 +1,5 @@
 # whisky_1_7.py
-# Whisky Project v1.7.5
+# Whisky Project v1.7.6
 #
 # Author:  tango4004
 # License: MIT
@@ -50,6 +50,9 @@ OUT_DIR = os.path.join(IO_DIR, "WHISKY_OUT")
 WORK_BASE = os.path.join(BASE_DIR, "work")
 
 PREFIX = os.environ.get("WHISKY_PREFIX", "WSC_1_7_")
+SMART_PREFIX = os.environ.get("WHISKY_SMART_PREFIX", "WSD1_BASH_")
+SMART_PARSER = os.environ.get("WHISKY_SMART_PARSER",
+                              os.path.join(SCRIPT_DIR, "smart_parser.sh"))
 CMD_TIMEOUT = int(os.environ.get("WHISKY_CMD_TIMEOUT", "600"))
 
 # --- LOGGING ---
@@ -74,9 +77,26 @@ def _parse_csv(path):
                 cmds.append(row[0].strip())
     return cmds
 
+def _parse_smart(local_path):
+    """Call smart_parser.sh to extract commands from any format via Gemini CLI."""
+    try:
+        result = subprocess.run(
+            ["bash", SMART_PARSER, local_path],
+            capture_output=True, text=True, timeout=180
+        )
+        lines = [l.strip() for l in result.stdout.splitlines() if l.strip()]
+        if not lines or "команда не распознана" in lines[0]:
+            logging.warning("Smart parser: no commands recognized.")
+            return []
+        return lines
+    except Exception as e:
+        logging.error(f"Smart parser error: {e}")
+        return []
+
+
 def process_task(file_name):
     ts = get_ts()
-    task_name = file_name.replace(".xlsx", "")
+    task_name = file_name.rsplit(".", 1)[0]
     local_dir = os.path.join(WORK_BASE, task_name)
     cloud_dir = os.path.join(OUT_DIR, task_name)
     src_path = os.path.join(IO_DIR, file_name)
@@ -114,7 +134,9 @@ def process_task(file_name):
 
         # 4. COMMAND PARSING
         ext = file_name.rsplit(".", 1)[-1].lower()
-        if ext == "csv":
+        if file_name.startswith(SMART_PREFIX):
+            tasks = _parse_smart(local_xlsx)
+        elif ext == "csv":
             tasks = _parse_csv(local_xlsx)
         else:
             df = pd.read_excel(local_xlsx, header=None)
@@ -180,12 +202,16 @@ if __name__ == "__main__":
             logging.error(f"Path not found: {p}. Create it before running.")
             exit(1)
 
-    logging.info(f"Whisky v.1.7.5 started. Watcher active on: {IO_DIR}")
+    logging.info(f"Whisky v.1.7.6 started. Watcher active on: {IO_DIR}")
 
     while True:
         try:
             # Pick up only files matching our version prefix
-            files = [f for f in os.listdir(IO_DIR) if f.startswith(PREFIX) and f.endswith((".xlsx", ".csv"))]
+            files = [
+                f for f in os.listdir(IO_DIR)
+                if (f.startswith(PREFIX) and f.endswith((".xlsx", ".csv"))) or
+                   (f.startswith(SMART_PREFIX) and f.endswith((".xlsx", ".csv", ".docx")))
+            ]
             for f in files:
                 process_task(f)
         except Exception as e:
