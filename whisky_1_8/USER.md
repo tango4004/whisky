@@ -63,5 +63,4 @@ Use single-quoted  for writing file contents — avoids escape conflicts:
     echo 'int main() { return 0; }' > hello.c
     gcc hello.c -o hello && ./hello
 
-Avoid  inside string arguments — the Docs → connector → shell pipeline
-does not preserve backslash escapes. Verify file writes with {"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":38,"reason":"McpError: MCP error -32001: Request timed out"}} before compiling.
+Verify each file write with  before compiling or running.
