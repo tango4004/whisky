@@ -1,35 +1,97 @@
 # Whisky Project
 
-A lightweight task-runner that watches a Google Drive-mounted directory for .xlsx files,
-executes shell commands listed inside each file, and writes results back as CSV files.
+A lightweight Drive-connected task runner for ARM/AMD servers.
+Drop a file on Google Drive — get shell command results back as CSV.
 
-## How it works
+---
 
-1. Drop an .xlsx file with the configured prefix (e.g. WSC_1_7_) into the Drive root.
-2. The watcher picks it up, reads one shell command per row, and runs them in order.
-3. Results land in WHISKY_OUT/<task_name>/<task_name>.csv on Google Drive.
-4. The input file is removed on success.
-5. Previous output for the same task name is overwritten (no _OLD_ archive copies).
+## v1.7 — Hardcoded bash runner
 
-## Quick start
+**Goal:** minimal, zero-dependency task execution. No AI model required on the server.
+
+The watcher reads shell commands from Google Sheets (column A) or CSV files,
+runs them on the server, and writes results back to Drive as a CSV.
+
+**Use when:** you have a server with rclone-mounted Drive and want reliable,
+predictable command execution without any API keys or external dependencies.
+
+**Supports:** .xlsx, .csv
+
+**Quick start:**
 
     cd whisky_1_7 && cp .env.example .env && python3 whisky_1_7.py
 
-## Configuration (.env)
+---
 
-WHISKY_PREFIX      - prefix this instance watches (unique per server)
-WHISKY_IO_DIR      - path to Drive mount (default: /home/whisky/whisky_drive)
-WHISKY_CMD_TIMEOUT - per-command timeout in seconds (default: 600)
+## v1.8 — Claude smart parser
 
-## Deployment
+**Goal:** accept any file format, extract commands via AI, execute on the server.
 
-Each server runs one watcher instance with a unique prefix:
+The watcher sends the file contents to Claude (Haiku) for command extraction,
+then executes whatever commands Claude returns. No hardcoded format assumptions.
 
-| Server   | Prefix      |
-|----------|-------------|
-| server_c | WSC_1_7_    |
-| server_1 | WS1_1_7_    |
-| server_2 | WS2_1_7_    |
-| server_3 | WS3_1_7_    |
+**Use when:** you have an Anthropic API key and want to drop Google Docs, plain text,
+or any structured file and have the server figure out what to run.
 
-Two instances sharing the same prefix will both process the same task and produce duplicate output.
+**Supports:** .xlsx, .csv, .docx, .txt
+
+**Requires:** ANTHROPIC_API_KEY in .env
+
+**Quick start:**
+
+    cd whisky_1_8 && cp .env.example .env
+    # fill in ANTHROPIC_API_KEY and WHISKY_PREFIX
+    python3 whisky_1_8.py
+
+---
+
+## Key differences
+
+| | v1.7 | v1.8 |
+|---|---|---|
+| Command source | Spreadsheet cells (literal) | Claude (Haiku) extracts from any text |
+| Formats | .xlsx, .csv | .xlsx, .csv, .docx, .txt |
+| API key needed | No | Yes (Anthropic) |
+| Token cost | Zero | Haiku per-parse call |
+| Best for | Structured, repeatable tasks | Flexible, free-form instructions |
+
+Both versions share the same Drive layout and prefix-based routing.
+
+---
+
+## File naming convention
+
+    WSC{server}_{major}_{minor}_{YYYYMMDD}_{description}.ext
+
+Example: WSC1_1_8_20260506_disk_audit.xlsx
+
+The filename without extension becomes the task name used in output paths.
+
+## Output structure
+
+    WHISKY_OUT/
+    └── WSC1_1_8_20260506_disk_audit/
+        ├── WSC1_1_8_20260506_disk_audit.xlsx    copy of input
+        ├── WSC1_1_8_20260506_disk_audit.csv     Command | Output results
+        └── result/                               files created during task
+
+## Input tips
+
+**Google Sheets:** wrap paths and arguments in  to survive CSV quoting.
+
+**Google Docs:** use single-quoted echo for file writes; verify with cat before compiling.
+Avoid backslash-n in string arguments — the Docs to shell pipeline strips escape sequences.
+
+## Configuration
+
+Each version has a  in its directory. Key variables:
+
+-  — Drive prefix this instance watches (unique per server)
+-  — path to rclone Drive mount
+-  — per-command timeout in seconds
+-  — v1.8 only
+-  — v1.8 only (default: claude-haiku-4-5-20251001)
+
+## License
+
+MIT
