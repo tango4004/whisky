@@ -53,7 +53,7 @@ def parse_commands(local_path):
         if r.stderr:
             logging.warning(f"Parser stderr: {r.stderr.strip()[:200]}")
         lines = [l.strip() for l in r.stdout.splitlines() if l.strip()]
-        if not lines or lines[0] == "no commands found":
+        if not lines or lines[0] == "команда не распознана":
             return []
         return lines
     except Exception as e:
@@ -107,7 +107,11 @@ def process_task(file_name):
         env = os.environ.copy()
         env["TMP_DIR"] = tmp_dir
 
+        failed = False
         for cmd in commands:
+            if failed:
+                results.append([cmd, "SKIPPED: previous command failed"])
+                continue
             logging.info(f"Exec: {cmd[:60]}...")
             try:
                 proc = subprocess.run(
@@ -115,13 +119,18 @@ def process_task(file_name):
                     cwd=local_dir, env=env, timeout=CMD_TIMEOUT
                 )
                 output = proc.stdout + proc.stderr
+                if proc.returncode != 0:
+                    logging.warning(f"Command failed (rc={proc.returncode}): {cmd[:40]}")
+                    failed = True
             except subprocess.TimeoutExpired as te:
                 out_part = (te.stdout or "") + (te.stderr or "")
                 output = f"TIMEOUT ({CMD_TIMEOUT}s)" + chr(10) + out_part
                 logging.warning(f"Timeout: {cmd[:40]}")
+                failed = True
             except Exception as e:
                 output = f"ERROR: {e}"
                 logging.error(f"Exec failed: {e}")
+                failed = True
             results.append([cmd, output])
 
         # Write results CSV
