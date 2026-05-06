@@ -1,58 +1,96 @@
 # Whisky Project
 
-A lightweight Drive-connected task runner for servers with AI agents.
+A lightweight Drive-connected task runner for ARM/AMD servers.
 Drop a file on Google Drive — get shell command results back as CSV.
 
-## Versions
+---
 
-**v1.7** — for servers without an AI agent. Reads commands directly from .xlsx cells.
-Optionally uses Gemini CLI ( prefix) for command extraction from any file format.
+## v1.7 — Hardcoded bash runner
 
-**v1.8** — for servers with an Anthropic API key. Routes all input files through
-Claude (Haiku) for command extraction, then executes results. Supports .xlsx, .csv, .docx, .txt.
+**Goal:** minimal, zero-dependency task execution. No AI model required on the server.
 
-## How it works
+The watcher reads shell commands from Google Sheets (column A) or CSV files,
+runs them on the server, and writes results back to Drive as a CSV.
 
-1. Drop a file with the configured prefix into the Drive root (e.g. ).
-2. The watcher picks it up, sends the file contents to Claude for command extraction.
-3. Extracted shell commands run in order on the server.
-4. Results land in  on Drive.
-5. The input file is removed on success.
+**Use when:** you have a server with rclone-mounted Drive and want reliable,
+predictable command execution without any API keys or external dependencies.
 
-## Quick start (v1.8)
+**Supports:** .xlsx, .csv
 
-    cd whisky_1_8
-    cp .env.example .env
+**Quick start:**
+
+    cd whisky_1_7 && cp .env.example .env && python3 whisky_1_7.py
+
+---
+
+## v1.8 — Claude smart parser
+
+**Goal:** accept any file format, extract commands via AI, execute on the server.
+
+The watcher sends the file contents to Claude (Haiku) for command extraction,
+then executes whatever commands Claude returns. No hardcoded format assumptions.
+
+**Use when:** you have an Anthropic API key and want to drop Google Docs, plain text,
+or any structured file and have the server figure out what to run.
+
+**Supports:** .xlsx, .csv, .docx, .txt
+
+**Requires:** ANTHROPIC_API_KEY in .env
+
+**Quick start:**
+
+    cd whisky_1_8 && cp .env.example .env
     # fill in ANTHROPIC_API_KEY and WHISKY_PREFIX
     python3 whisky_1_8.py
 
-## Quick start (v1.7)
+---
 
-    cd whisky_1_7
-    cp .env.example .env
-    python3 whisky_1_7.py
+## Key differences
 
-## Input format tips
+| | v1.7 | v1.8 |
+|---|---|---|
+| Command source | Spreadsheet cells (literal) | Claude (Haiku) extracts from any text |
+| Formats | .xlsx, .csv | .xlsx, .csv, .docx, .txt |
+| API key needed | No | Yes (Anthropic) |
+| Token cost | Zero | Haiku per-parse call |
+| Best for | Structured, repeatable tasks | Flexible, free-form instructions |
 
-**Google Sheets (.xlsx):** wrap paths and arguments in  to avoid
-CSV quoting issues. Example: 
+Both versions share the same Drive layout and prefix-based routing.
 
-**Google Docs (.docx):** preferred for multi-line scripts and file creation.
-Use single-quoted  for code literals — avoids escape conflicts across
-the Docs → connector → shell pipeline. Verify each write with {"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":115,"reason":"McpError: MCP error -32001: Request timed out"}} before compiling.
+---
+
+## File naming convention
+
+    WSC{server}_{major}_{minor}_{YYYYMMDD}_{description}.ext
+
+Example: WSC1_1_8_20260506_disk_audit.xlsx
+
+The filename without extension becomes the task name used in output paths.
+
+## Output structure
+
+    WHISKY_OUT/
+    └── WSC1_1_8_20260506_disk_audit/
+        ├── WSC1_1_8_20260506_disk_audit.xlsx    copy of input
+        ├── WSC1_1_8_20260506_disk_audit.csv     Command | Output results
+        └── result/                               files created during task
+
+## Input tips
+
+**Google Sheets:** wrap paths and arguments in  to survive CSV quoting.
+
+**Google Docs:** use single-quoted echo for file writes; verify with cat before compiling.
+Avoid backslash-n in string arguments — the Docs to shell pipeline strips escape sequences.
 
 ## Configuration
 
-See  in each version directory.
+Each version has a  in its directory. Key variables:
 
-Key variables for v1.8:
-
-| Variable | Description |
-|---|---|
-|  | Drive prefix this instance watches (unique per server) |
-|  | Path to rclone Drive mount |
-|  | Anthropic API key for Claude parser |
-|  | Model for extraction (default: claude-haiku-4-5-20251001) |
+-  — Drive prefix this instance watches (unique per server)
+-  — path to rclone Drive mount
+-  — per-command timeout in seconds
+-  — v1.8 only
+-  — v1.8 only (default: claude-haiku-4-5-20251001)
 
 ## License
 
