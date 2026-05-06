@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """claude_parser.py - extract bash commands from any file via Anthropic API (Haiku).
 Usage: claude_parser.py <file_path>
-Output: one bash command per line, or: команда не распознана
+Output: one bash command per line, or: no commands found
 """
 import sys, os, json, urllib.request, subprocess, shutil
 
@@ -22,7 +22,7 @@ SYSTEM   = os.environ.get("CLAUDE_PARSER_SYSTEM",
     "Output each command on its own line. "
     "No markdown, no code blocks, no explanations, no line numbers. "
     "Just raw commands, one per line. "
-    "If no bash commands are found, output exactly: команда не распознана")
+    "If no bash commands are found, output exactly: no commands found")
 EXTRACT  = os.environ.get("WHISKY_EXTRACT_SCRIPT",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "extract_text.py"))
 
@@ -38,7 +38,7 @@ def extract_text(path):
 def call_claude(text):
     if not API_KEY:
         print("ANTHROPIC_API_KEY not set", file=sys.stderr)
-        return "команда не распознана"
+        return "no commands found"
     body = json.dumps({
         "model": MODEL,
         "max_tokens": 1024,
@@ -57,20 +57,20 @@ def call_claude(text):
     try:
         resp = urllib.request.urlopen(req, timeout=30)
         data = json.loads(resp.read())
-        return data["content"][0]["text"].strip() or "команда не распознана"
+        return data["content"][0]["text"].strip() or "no commands found"
     except Exception as e:
         print(f"API error: {e}", file=sys.stderr)
-        return "команда не распознана"
+        return "no commands found"
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit("Usage: claude_parser.py <file>")
     path = sys.argv[1]
     if not os.path.exists(path):
-        print("команда не распознана")
+        print("no commands found")
         sys.exit(0)
     text = extract_text(path)
     if not text:
-        print("команда не распознана")
+        print("no commands found")
         sys.exit(0)
     print(call_claude(text))

@@ -53,7 +53,7 @@ def parse_commands(local_path):
         if r.stderr:
             logging.warning(f"Parser stderr: {r.stderr.strip()[:200]}")
         lines = [l.strip() for l in r.stdout.splitlines() if l.strip()]
-        if not lines or lines[0] == "команда не распознана":
+        if not lines or lines[0] == "no commands found":
             return []
         return lines
     except Exception as e:

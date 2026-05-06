@@ -39,7 +39,7 @@ Extracted text is sent to Claude as a single prompt. Claude returns one command 
 ## Claude parser (claude_parser.py)
 
 - Calls Anthropic API (model set via CLAUDE_PARSER_MODEL in .env)
-- Returns: one bash command per line, or "команда не распознана" if nothing found
+- Returns: one bash command per line, or "no commands found" if nothing found
 - On empty/error response: task is skipped, input file preserved
 
 ## Quoting issues
