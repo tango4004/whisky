@@ -183,6 +183,17 @@ if __name__ == "__main__":
                 if f.startswith(PREFIX) and f.endswith(SUPPORTED_EXT)
             ]
             for f in files:
+                fpath = os.path.join(IO_DIR, f)
+                # Wait for file to be fully synced (non-zero and stable size)
+                size1 = os.path.getsize(fpath)
+                if size1 == 0:
+                    continue
+                time.sleep(2)
+                if not os.path.exists(fpath):
+                    continue
+                size2 = os.path.getsize(fpath)
+                if size2 != size1:
+                    continue  # still changing, pick up next cycle
                 process_task(f)
         except Exception as e:
             logging.error(f"Main loop error: {e}")
