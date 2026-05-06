@@ -151,12 +151,13 @@ def process_task(file_name):
         index_path = os.path.join(IO_DIR, "WHISKY_INDEX.csv")
         status = "FAILED" if failed else "OK"
         ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-        index_row = [ts, task_name, status, len(results)]
+        details = f"WHISKY_OUT/{task_name}/{task_name}.csv" if failed else ""
+        index_row = [ts, task_name, status, len(results), details]
         write_header = not os.path.exists(index_path)
         with open(index_path, "a", newline="", encoding="utf-8-sig") as f:
             w = csv.writer(f)
             if write_header:
-                w.writerow(["Timestamp", "Task", "Status", "Commands"])
+                w.writerow(["Timestamp", "Task", "Status", "Commands", "Details"])
             w.writerow(index_row)
 
         # Remove input
