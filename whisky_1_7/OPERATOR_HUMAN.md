@@ -22,12 +22,12 @@
     [Service]
     Type=simple
     User=whisky
-    WorkingDirectory=/home/whisky/whisky-project/whisky_1_7
-    ExecStart=/usr/bin/python3 whisky_1_7.py
+    WorkingDirectory=/home/whisky/whisky_1_7
+    ExecStart=/usr/bin/python3 /home/whisky/whisky_1_7/whisky_1_7.py
     Restart=on-failure
     RestartSec=10
-    StandardOutput=append:/home/whisky/whisky-project/whisky_1_7/whisky_1_7.log
-    StandardError=append:/home/whisky/whisky-project/whisky_1_7/whisky_1_7.log
+    StandardOutput=append:/home/whisky/whisky_1_7/whisky_1_7.log
+    StandardError=append:/home/whisky/whisky_1_7/whisky_1_7.log
 
     [Install]
     WantedBy=multi-user.target
