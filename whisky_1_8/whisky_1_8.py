@@ -85,13 +85,11 @@ def process_task(file_name):
         try:
             shutil.copy2(src_path, local_file)
         except OSError as e:
-            logging.error(f"Cannot read {file_name}: {e}. Removing.")
-            try: os.remove(src_path)
-            except Exception: pass
+            logging.warning(f"Cannot read {file_name}: {e}. Will retry next cycle.")
             return
-        # Check local copy is non-empty (file may not be synced yet)
+        # Check local copy is non-empty (Drive file not yet written)
         if os.path.getsize(local_file) == 0:
-            logging.warning(f"Local copy of {file_name} is empty, skipping (not yet synced).")
+            logging.warning(f"Local copy of {file_name} is empty, will retry next cycle.")
             try: os.remove(local_file)
             except Exception: pass
             return
