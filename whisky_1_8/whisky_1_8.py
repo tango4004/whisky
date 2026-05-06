@@ -146,6 +146,19 @@ def process_task(file_name):
         if os.listdir(res_dir):
             shutil.copytree(res_dir, os.path.join(cloud_dir, "result"), dirs_exist_ok=True)
 
+        # Update WHISKY_INDEX.csv in Drive root
+        import datetime
+        index_path = os.path.join(IO_DIR, "WHISKY_INDEX.csv")
+        status = "FAILED" if failed else "OK"
+        ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        index_row = [ts, task_name, status, len(results)]
+        write_header = not os.path.exists(index_path)
+        with open(index_path, "a", newline="", encoding="utf-8-sig") as f:
+            w = csv.writer(f)
+            if write_header:
+                w.writerow(["Timestamp", "Task", "Status", "Commands"])
+            w.writerow(index_row)
+
         # Remove input
         if os.path.exists(src_path): os.remove(src_path)
         logging.info(f"Task {task_name} done. {len(results)} command(s).")
