@@ -32,3 +32,9 @@ Two instances must not share a prefix — both would process the same task.
 
 Not implemented in v1.8.0. Monitor usage via Anthropic console.
 Model is configurable: CLAUDE_PARSER_MODEL in .env.
+
+## Security notes
+
+- Commands run as the service user — scope permissions accordingly
+- .env is gitignored; never commit API keys
+- v1.8.0 has no command allowlist — any command Claude returns will execute
