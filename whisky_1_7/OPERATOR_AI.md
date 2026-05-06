@@ -1,39 +1,29 @@
-# Operator Guide (AI / Bot)
+# Whisky v1.7 — Developer / AI Guide
 
-## Server prefix assignments
+## Architecture
 
-| Server   | Prefix      |
-|----------|-------------|
-| server_c | WSC_1_7_    |
-| server_1 | WS1_1_7_    |
-| server_2 | WS2_1_7_    |
-| server_3 | WS3_1_7_    |
+Hardcoded bash task runner. No AI model involved in command parsing.
+Reads commands literally from spreadsheet cells and executes them via subprocess.
 
-Use the prefix that matches the target server.
+## Input formats
 
-## Dropping a task
+- .xlsx — column A, no header (parsed with pandas)
+- .csv  — first column, UTF-8-BOM safe
 
-Place an .xlsx file in IO_DIR (Drive root):
+## Prefix routing
 
-    <PREFIX><TASK_NAME>.xlsx
-    Example: WSC_1_7_20260504_A1.xlsx
+Each server instance has a unique WHISKY_PREFIX in .env.
+Only files starting with PREFIX are picked up. Two instances must not share a prefix.
 
-Column A: one shell command per row, no header.
+## Known quoting issues
 
-## Validation checklist
+Google Sheets CSV export doubles internal quotation marks. To pass paths or arguments:
+  Use: bash -c \df -h  Not: df -h /some/path  (may lose arguments after CSV round-trip)
 
-- Filename starts with the correct prefix for the target server
-- Extension is .xlsx
-- Column A: commands only, no header, no empty leading rows
+Backslash-n inside string literals does not survive the Sheets to shell pipeline.
+Use && chaining for multi-step commands, not newlines.
 
-## Reading results
+## No AI in v1.7
 
-    WHISKY_OUT/<task_name>/<task_name>.csv
-    Columns: Command, Output
-
-Re-submitting the same task name overwrites previous output (no _OLD_ folders).
-
-## Error tokens in Output column
-
-!!! TIMEOUT ERROR (600s) !!!   - command exceeded timeout
-!!! SYSTEM ERROR: <msg> !!!    - unexpected exception
+v1.7 contains no model calls. All command extraction is hardcoded.
+For Claude-assisted parsing of arbitrary formats, see whisky_1_8.

@@ -1,56 +1,37 @@
-# User Guide (AI / Bot)
+# Whisky v1.7 — AI Operator Guide
 
-## Server prefix assignments
+## Overview
 
-| Server   | Prefix      |
-|----------|-------------|
-| server_c | WSC_1_7_    |
-| server_1 | WS1_1_7_    |
-| server_2 | WS2_1_7_    |
-| server_3 | WS3_1_7_    |
+Whisky v1.7 is a hardcoded bash task runner. It watches a Drive-mounted directory for
+files with a configured prefix, reads shell commands from column A, executes them, and
+writes results to CSV.
 
-## Task file naming
+## Input formats
 
-    <PREFIX><ISO_DATE>_<ID>.xlsx
-    Example (server_c): WSC_1_7_20260504_A1.xlsx
+-  — one command per row, column A, no header
+-   — one command per row, first column (UTF-8-BOM safe)
 
-## File format
+## Prefix routing
 
-- Type: .xlsx
-- Structure: single sheet, no header
-- Column A: one shell command per cell (A1, A2, ...)
-- Plain text only
+Each server instance watches a unique prefix (set in ).
+Default: . Two instances must never share a prefix.
 
-## Workflow
+## Command encoding notes
 
-1. Create .xlsx with commands in column A.
-2. Place in root of watched Google Drive (not in a subfolder).
-3. Poll WHISKY_OUT/<task_name>/<task_name>.csv for results.
+**Google Sheets → CSV export** doubles internal quote characters.
+Always wrap commands containing paths or arguments in :
 
-## Output CSV
+    bash -c "df -h && uptime"
 
-Column Command: the shell command that was run
-Column Output:  combined stdout + stderr
+Do not rely on  inside string literals — the Sheets → connector → shell pipeline
+does not preserve escape sequences. Use  chaining instead.
 
-## Command formatting — avoid quotes in cells
+## Output
 
-CSV parsing doubles or triples quotes inside cell values, breaking commands.
+Results land in  with columns:
+,  (stdout + stderr merged).
 
-Good (no quotes in cells):
-    hostname
-    ls -la /home/whisky
-    bash -c ls
-    bash -c pwd
+## No AI parsing in v1.7
 
-Avoid:
-    bash -c "ls"       <- quotes get mangled by CSV parser
-    echo "hello world" <- same issue
-
-If a command requires quoting, write a script to /tmp and call it:
-    bash /tmp/myscript.sh
-
-## Notes
-
-- Input file is deleted after successful processing.
-- Re-submitting the same task name overwrites previous output (no archive copies).
-- Task file must be .xlsx — .docx and other formats are ignored silently.
+v1.7 reads commands literally from cells. There is no AI model involved.
+For AI-assisted command extraction from arbitrary file formats, use v1.8.

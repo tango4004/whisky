@@ -1,33 +1,32 @@
-# User Guide (Human)
+# Whisky v1.7 — User Guide
 
-## What is Whisky?
-Drop a Google Sheet with shell commands into your Drive root. Whisky runs them and returns a CSV.
+## What it does
 
-## How to run a task
+Drop a Google Sheet or CSV with shell commands into your Drive root.
+Whisky runs them on the server and returns results as a CSV file.
 
-1. Go to the ROOT of your Google Drive (not in any subfolder).
-2. Create a new Google Sheet there.
-3. Enter shell commands in Column A, one per row, starting at A1. No header.
-4. Name the file with the prefix for the target server:
+## How to send a task
 
-   | Server   | Prefix      |
-   |----------|-------------|
-   | server_c | WSC_1_7_    |
-   | server_1 | WS1_1_7_    |
-   | server_2 | WS2_1_7_    |
-   | server_3 | WS3_1_7_    |
+1. Open Google Sheets and create a new spreadsheet in the **Drive root** (not in a subfolder).
+2. Enter shell commands in **column A**, one per row, starting at A1. No header row.
+3. Name the file with the prefix for your target server, e.g. .
+4. Wait a few seconds — results appear in .
 
-   Example: WSC_1_7_mytest
+## Command tips
 
-5. Results appear in: WHISKY_OUT/WSC_1_7_mytest/WSC_1_7_mytest.csv
+- Wrap commands with path arguments in  to avoid CSV quoting issues:
+  
+- Avoid double quotes inside cell values — CSV export may double them unexpectedly.
+- For multi-step operations, chain with :
+  
 
-## Example (Column A)
-date
-uptime
-ls -la ~
+## Reading results
+
+Results CSV has two columns: **Command** and **Output** (stdout + stderr).
+If a command fails, the error is captured — the task continues to the next command.
 
 ## Notes
-- Plain text only.
-- File must be in Drive root.
-- Input sheet is deleted after successful processing.
+
+- Input file is deleted after successful processing.
 - Re-running the same task name overwrites previous output.
+- Use  files instead of Sheets if you need to include commas in commands.

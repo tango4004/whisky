@@ -5,7 +5,7 @@
 # License: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the \Software\), to deal
+# of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
@@ -14,7 +14,7 @@
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
 #
-# THE SOFTWARE IS PROVIDED \AS IS\, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -23,6 +23,7 @@
 # THE SOFTWARE.
 
 import os
+import csv
 import time
 import shutil
 import logging
@@ -30,7 +31,7 @@ import subprocess
 import pandas as pd
 from datetime import datetime
 
-# --- LOAD .env (optional, overrides defaults) ---
+# --- LOAD .env ---
 _env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 if os.path.exists(_env_file):
     with open(_env_file) as _f:
@@ -40,36 +41,31 @@ if os.path.exists(_env_file):
                 _k, _v = _line.split("=", 1)
                 os.environ.setdefault(_k.strip(), _v.strip())
 
-# --- DYNAMIC PATH SETUP ---
-# Script resolves its own location and builds the directory tree from the project root
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR = os.path.dirname(SCRIPT_DIR)
+SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR     = os.path.dirname(SCRIPT_DIR)
 
-IO_DIR = os.environ.get("WHISKY_IO_DIR", "/home/whisky/whisky_drive")
-OUT_DIR = os.path.join(IO_DIR, "WHISKY_OUT")
-WORK_BASE = os.path.join(BASE_DIR, "work")
+IO_DIR       = os.environ.get("WHISKY_IO_DIR",      "/home/whisky/whisky_drive")
+OUT_DIR      = os.path.join(IO_DIR, "WHISKY_OUT")
+WORK_BASE    = os.path.join(BASE_DIR, "work")
+PREFIX       = os.environ.get("WHISKY_PREFIX",       "WSC1_1_7_")
+CMD_TIMEOUT  = int(os.environ.get("WHISKY_CMD_TIMEOUT", "600"))
 
-PREFIX = os.environ.get("WHISKY_PREFIX", "WSC_1_7_")
-SMART_PREFIX = os.environ.get("WHISKY_SMART_PREFIX", "WSD1_BASH_")
-SMART_PARSER = os.environ.get("WHISKY_SMART_PARSER",
-                              os.path.join(SCRIPT_DIR, "smart_parser.sh"))
-CMD_TIMEOUT = int(os.environ.get("WHISKY_CMD_TIMEOUT", "600"))
-
-# --- LOGGING ---
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        logging.StreamHandler()   # systemd appends stdout to log file
-    ]
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler()]
 )
 
 def get_ts():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
+def _parse_xlsx(path):
+    """Extract commands from .xlsx — column A, no header."""
+    df = pd.read_excel(path, header=None)
+    return df[0].dropna().astype(str).tolist() if not df.empty and 0 in df.columns else []
+
 def _parse_csv(path):
-    """Extract commands from .csv — first column, no header assumed."""
-    import csv
+    """Extract commands from .csv — first column."""
     cmds = []
     with open(path, newline="", encoding="utf-8-sig") as f:
         for row in csv.reader(f):
@@ -77,86 +73,56 @@ def _parse_csv(path):
                 cmds.append(row[0].strip())
     return cmds
 
-def _parse_smart(local_path):
-    """Call smart_parser.sh to extract commands from any format via Gemini CLI."""
-    try:
-        result = subprocess.run(
-            ["bash", SMART_PARSER, local_path],
-            capture_output=True, text=True, timeout=180
-        )
-        lines = [l.strip() for l in result.stdout.splitlines() if l.strip()]
-        if not lines or "команда не распознана" in lines[0]:
-            logging.warning("Smart parser: no commands recognized.")
-            return []
-        return lines
-    except Exception as e:
-        logging.error(f"Smart parser error: {e}")
-        return []
-
-
 def process_task(file_name):
-    ts = get_ts()
+    ts        = get_ts()
     task_name = file_name.rsplit(".", 1)[0]
     local_dir = os.path.join(WORK_BASE, task_name)
     cloud_dir = os.path.join(OUT_DIR, task_name)
-    src_path = os.path.join(IO_DIR, file_name)
+    src_path  = os.path.join(IO_DIR, file_name)
+    ext       = file_name.rsplit(".", 1)[-1].lower()
 
-    logging.info(f"--- Captured Task: {task_name} ---")
+    logging.info(f"--- Task: {task_name} ---")
 
     try:
-        # 1. CLEANUP (drop old run — no OLD folders, prevents Drive flood)
         for d in [local_dir, cloud_dir]:
             if os.path.exists(d):
                 shutil.rmtree(d)
-                logging.info(f"Removed old directory: {os.path.basename(d)}")
 
-        # 2. STRUCTURE INIT
         tmp_dir = os.path.join(local_dir, "tmp")
         res_dir = os.path.join(local_dir, "result")
-        os.makedirs(tmp_dir, exist_ok=True)
-        os.makedirs(res_dir, exist_ok=True)
-        os.makedirs(cloud_dir, exist_ok=True)
+        for d in [tmp_dir, res_dir, cloud_dir]:
+            os.makedirs(d, exist_ok=True)
 
-        # 3. MATERIALIZATION
-        local_xlsx = os.path.join(local_dir, file_name)
+        local_src = os.path.join(local_dir, file_name)
         try:
-            shutil.copy2(src_path, local_xlsx)                         # local copy (triggers rclone VFS download)
+            shutil.copy2(src_path, local_src)
         except OSError as e:
-            logging.error(f"Cannot read {file_name} from Drive ({e}). Removing to stop retry loop.")
-            try:
-                os.remove(src_path)
-            except Exception:
-                pass
+            logging.error(f"Cannot read {file_name}: {e}. Removing to stop retry loop.")
+            try: os.remove(src_path)
+            except Exception: pass
             return
-        ext_check = file_name.rsplit(".", 1)[-1].lower()
-        if ext_check != "csv":                                          # skip mirror for csv — name conflicts with result
-            shutil.copy2(local_xlsx, os.path.join(cloud_dir, file_name))
 
-        # 4. COMMAND PARSING
-        ext = file_name.rsplit(".", 1)[-1].lower()
-        if file_name.startswith(SMART_PREFIX):
-            tasks = _parse_smart(local_xlsx)
-        elif ext == "csv":
-            tasks = _parse_csv(local_xlsx)
+        if ext != "csv":
+            shutil.copy2(local_src, os.path.join(cloud_dir, file_name))
+
+        if ext == "csv":
+            tasks = _parse_csv(local_src)
         else:
-            df = pd.read_excel(local_xlsx, header=None)
-            tasks = df[0].dropna().astype(str).tolist() if not df.empty and 0 in df.columns else []
-        results = []
+            tasks = _parse_xlsx(local_src)
 
         if not tasks:
-            logging.warning(f"Task {task_name}: no commands found, skipping.")
-            if os.path.exists(src_path):
-                os.remove(src_path)
+            logging.warning(f"No commands found in {file_name}, skipping.")
+            if os.path.exists(src_path): os.remove(src_path)
             return
 
-        # 5. EXECUTION LOOP
+        results = []
         for cmd in tasks:
             cmd = cmd.strip()
-            logging.info(f"Executing: {cmd[:50]}...")
-
+            if not cmd:
+                continue
+            logging.info(f"Executing: {cmd[:60]}...")
             env = os.environ.copy()
             env["TMP_DIR"] = tmp_dir
-
             try:
                 proc = subprocess.run(
                     cmd, shell=True, capture_output=True, text=True,
@@ -164,57 +130,44 @@ def process_task(file_name):
                 )
                 output = proc.stdout + proc.stderr
             except subprocess.TimeoutExpired as te:
-                # Capture whatever output was collected before timeout
-                out_part = (te.stdout if te.stdout else "") + (te.stderr if te.stderr else "")
-                output = f"!!! TIMEOUT ERROR ({CMD_TIMEOUT}s) !!!\n--- Captured Output ---\n{out_part}"
-                logging.warning(f"Command timed out: {cmd[:30]}")
+                out_part = (te.stdout or "") + (te.stderr or "")
+                output = "TIMEOUT (%ds)" % CMD_TIMEOUT + chr(10) + out_part
+                logging.warning(f"Timeout: {cmd[:40]}")
             except Exception as e:
-                output = f"!!! SYSTEM ERROR: {str(e)} !!!"
+                output = f"ERROR: {e}"
                 logging.error(f"Execution failed: {e}")
-
             results.append([cmd, output])
 
-        # 6. FINALIZATION (UTF-8-SIG for correct Excel opening)
         res_df = pd.DataFrame(results, columns=["Command", "Output"])
-        local_res_csv = os.path.join(local_dir, f"{task_name}.csv")
-        res_df.to_csv(local_res_csv, index=False, encoding='utf-8-sig')
+        local_csv = os.path.join(local_dir, f"{task_name}.csv")
+        res_df.to_csv(local_csv, index=False, encoding="utf-8-sig")
 
-        # 7. EXPORT RESULTS
-        shutil.copy2(local_res_csv, os.path.join(cloud_dir, f"{task_name}.csv"))
+        shutil.copy2(local_csv, os.path.join(cloud_dir, f"{task_name}.csv"))
         if os.path.exists(res_dir) and os.listdir(res_dir):
             shutil.copytree(res_dir, os.path.join(cloud_dir, "result"), dirs_exist_ok=True)
 
-        # 8. CLEANUP INPUT (only after successful completion)
-        if os.path.exists(src_path):
-            os.remove(src_path)
-
-        logging.info(f"Task {task_name} successfully finished.")
+        if os.path.exists(src_path): os.remove(src_path)
+        logging.info(f"Task {task_name} done.")
 
     except Exception as e:
-        logging.critical(f"Critical error during {task_name} processing: {e}")
+        logging.critical(f"Critical error in {task_name}: {e}")
 
-# --- MAIN LOOP ---
 if __name__ == "__main__":
-    # Validate environment before starting
-    critical_paths = [IO_DIR, WORK_BASE]
-    for p in critical_paths:
+    for p in [IO_DIR, WORK_BASE]:
         if not os.path.exists(p):
-            logging.error(f"Path not found: {p}. Create it before running.")
+            logging.error(f"Path not found: {p}")
             exit(1)
 
-    logging.info(f"Whisky v.1.7.6 started. Watcher active on: {IO_DIR}")
+    logging.info(f"Whisky v1.7.6 started. PREFIX={PREFIX}, watching: {IO_DIR}")
 
     while True:
         try:
-            # Pick up only files matching our version prefix
             files = [
                 f for f in os.listdir(IO_DIR)
-                if (f.startswith(PREFIX) and f.endswith((".xlsx", ".csv"))) or
-                   (f.startswith(SMART_PREFIX) and f.endswith((".xlsx", ".csv", ".docx")))
+                if f.startswith(PREFIX) and f.endswith((".xlsx", ".csv"))
             ]
             for f in files:
                 process_task(f)
         except Exception as e:
             logging.error(f"Main loop error: {e}")
-
-        time.sleep(2)  # be gentle on CPU and disk I/O
+        time.sleep(2)

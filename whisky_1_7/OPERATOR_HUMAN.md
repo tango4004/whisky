@@ -1,30 +1,47 @@
-# Operator Guide (Human)
+# Whisky v1.7 — Operator Guide
+
+## Requirements
+
+- Python 3.8+
+- ,  ()
+- rclone mounted Google Drive at 
 
 ## Setup
-1. Clone repo, create whisky_drive/ and work/ directories.
-2. pip install pandas openpyxl
-3. Copy whisky_1_7/.env.example to whisky_1_7/.env and set WHISKY_PREFIX for this server.
-4. Mount Drive: rclone mount gdrive: whisky_drive/ --allow-other --vfs-cache-mode writes
-5. Start: python3 whisky_1_7/whisky_1_7.py  (or use systemd service)
 
-## .env settings (whisky_1_7/.env, gitignored)
+    cd whisky_1_7
+    cp .env.example .env
+    # set WHISKY_PREFIX (unique per server) and WHISKY_IO_DIR
+    python3 whisky_1_7.py
 
-WHISKY_PREFIX=WSC_1_7_        # unique per server - NEVER share across instances
-WHISKY_IO_DIR=/home/whisky/whisky_drive
-WHISKY_CMD_TIMEOUT=600
+## Systemd service
 
-## Server prefix assignments
+    [Unit]
+    Description=Whisky v1.7 task runner
+    After=network.target
 
-| Server   | Prefix      |
-|----------|-------------|
-| server_c | WSC_1_7_    |
-| server_1 | WS1_1_7_    |
-| server_2 | WS2_1_7_    |
-| server_3 | WS3_1_7_    |
+    [Service]
+    Type=simple
+    User=whisky
+    WorkingDirectory=/home/whisky/whisky-project/whisky_1_7
+    ExecStart=/usr/bin/python3 whisky_1_7.py
+    Restart=on-failure
+    RestartSec=10
+    StandardOutput=append:/home/whisky/whisky-project/whisky_1_7/whisky_1_7.log
+    StandardError=append:/home/whisky/whisky-project/whisky_1_7/whisky_1_7.log
 
-## Monitoring
+    [Install]
+    WantedBy=multi-user.target
 
-- Log: whisky_1_7/whisky_1_7.log
-- Watcher polls every 2 s
-- Re-run of same task name overwrites previous output (no _OLD_ archive folders)
-- sudo systemctl status whisky
+## Configuration (.env)
+
+    WHISKY_PREFIX=WSC1_1_7_      # unique per server instance
+    WHISKY_IO_DIR=/home/whisky/whisky_drive
+    WHISKY_CMD_TIMEOUT=600
+
+## Output structure
+
+    WHISKY_OUT/
+    └── <task_name>/
+        ├── <task_name>.<ext>   # copy of input file
+        ├── <task_name>.csv     # Command | Output results
+        └── result/             # files written during execution
