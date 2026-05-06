@@ -2,31 +2,53 @@
 
 ## What it does
 
-Drop a Google Sheet or CSV with shell commands into your Drive root.
-Whisky runs them on the server and returns results as a CSV file.
+Drop a Google Sheet with shell commands into your Drive root.
+Whisky picks it up, runs the commands on the server, and puts results back.
+
+## File naming convention
+
+    PREFIX + DATE + DESCRIPTION + .xlsx
+
+- **PREFIX** identifies the target server and version (assigned by your operator)
+- **DATE** is optional but recommended: YYYYMMDD
+- **DESCRIPTION** is a short label with underscores, no spaces
+
+Example: WSC1_1_7_20260506_disk_audit.xlsx
+
+The full filename without extension becomes the task name used in output paths.
 
 ## How to send a task
 
-1. Open Google Sheets and create a new spreadsheet in the **Drive root** (not in a subfolder).
-2. Enter shell commands in **column A**, one per row, starting at A1. No header row.
-3. Name the file with the prefix for your target server, e.g. .
-4. Wait a few seconds — results appear in .
+1. Open Google Sheets, create a new spreadsheet in the Drive root (not in a subfolder).
+2. Enter shell commands in column A, one per row, starting at A1. No header row.
+3. Name the file following the convention above and save.
+4. Wait a few seconds — the input file disappears when picked up.
 
-## Command tips
+## Output structure on Drive
 
-- Wrap commands with path arguments in  to avoid CSV quoting issues:
-  
-- Avoid double quotes inside cell values — CSV export may double them unexpectedly.
-- For multi-step operations, chain with :
-  
+Results appear under WHISKY_OUT in your Drive root:
 
-## Reading results
+    WHISKY_OUT/
+    └── WSC1_1_7_20260506_disk_audit/
+        ├── WSC1_1_7_20260506_disk_audit.xlsx    copy of input
+        └── WSC1_1_7_20260506_disk_audit.csv     results
 
-Results CSV has two columns: **Command** and **Output** (stdout + stderr).
-If a command fails, the error is captured — the task continues to the next command.
+Open the CSV in Sheets. Two columns: Command and Output.
+If a command fails, the error appears in Output and execution continues.
 
-## Notes
+## Example commands (column A)
 
-- Input file is deleted after successful processing.
+    df -h
+    uptime
+    ls -la /home/whisky
+
+For commands with paths or arguments, wrap in bash -c to avoid CSV quoting issues:
+
+    bash -c "cp /tmp/file.txt /home/whisky/"
+    bash -c "df -h && uptime"
+
+## Tips
+
+- File must be in the Drive root, not in a subfolder.
 - Re-running the same task name overwrites previous output.
-- Use  files instead of Sheets if you need to include commas in commands.
+- Avoid backslash-n in string arguments; use && for multi-step commands instead.

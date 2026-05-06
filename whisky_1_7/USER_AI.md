@@ -2,36 +2,45 @@
 
 ## Overview
 
-Whisky v1.7 is a hardcoded bash task runner. It watches a Drive-mounted directory for
-files with a configured prefix, reads shell commands from column A, executes them, and
-writes results to CSV.
+Hardcoded bash task runner. No AI model involved.
+Reads commands literally from spreadsheet cells, executes via subprocess, returns CSV.
+
+## File naming convention
+
+    PREFIX + DATE + DESCRIPTION + .ext
+
+- PREFIX: unique per server instance, set in .env (e.g. WSC1_1_7_)
+- DATE: YYYYMMDD recommended
+- DESCRIPTION: alphanumeric and underscores only
+- ext: .xlsx or .csv
+
+The full filename minus extension is the task name used in all output paths.
 
 ## Input formats
 
--  — one command per row, column A, no header
--   — one command per row, first column (UTF-8-BOM safe)
+- .xlsx: column A, no header (pandas read_excel)
+- .csv: first column, UTF-8-BOM safe (stdlib csv reader)
 
-## Prefix routing
+## Output structure on Google Drive
 
-Each server instance watches a unique prefix (set in ).
-Default: . Two instances must never share a prefix.
+    WHISKY_IO_DIR/
+    ├── WSC1_1_7_<date>_<desc>.xlsx        input file, deleted on success
+    └── WHISKY_OUT/
+        └── WSC1_1_7_<date>_<desc>/
+            ├── WSC1_1_7_<date>_<desc>.xlsx    copy of input
+            ├── WSC1_1_7_<date>_<desc>.csv     Command | Output (UTF-8-BOM)
+            └── result/                         files written during execution
 
-## Command encoding notes
+## Quoting issues
 
-**Google Sheets → CSV export** doubles internal quote characters.
-Always wrap commands containing paths or arguments in :
+Google Sheets CSV export doubles internal quote characters.
+Wrap commands with paths or arguments in bash -c:
 
-    bash -c "df -h && uptime"
+    bash -c "cp /tmp/file /home/whisky/"
 
-Do not rely on  inside string literals — the Sheets → connector → shell pipeline
-does not preserve escape sequences. Use  chaining instead.
+Backslash-n inside string literals does not survive Sheets to shell.
+Use && chaining for multi-step commands.
 
-## Output
+## No AI in v1.7
 
-Results land in  with columns:
-,  (stdout + stderr merged).
-
-## No AI parsing in v1.7
-
-v1.7 reads commands literally from cells. There is no AI model involved.
-For AI-assisted command extraction from arbitrary file formats, use v1.8.
+v1.7 reads commands literally. For Claude-assisted parsing, use v1.8.
